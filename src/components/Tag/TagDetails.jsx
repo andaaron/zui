@@ -219,7 +219,28 @@ function TagDetails() {
           />
         );
       case 'ReferredBy':
-        return <ReferredBy referrers={imageDetailData?.referrers} />;
+        // Create a union of manifest referrers and index referrers
+        // In case of singlearch images the manifest and index referrers are the same
+        // In case of multiarch images the index may have referrers and the manifest may have other referrers
+        // Since we don't have a separate widget for index referrers bs manifest referrers, we need to show all of them here
+
+        let allReferrers = [];
+
+        if (selectedManifest?.referrers && selectedManifest.referrers.length > 0) {
+          allReferrers = [...selectedManifest.referrers];
+        }
+
+        if (imageDetailData?.referrers && imageDetailData.referrers.length > 0) {
+          const existingDigests = new Set(allReferrers.map(ref => ref.digest));
+
+          imageDetailData.referrers.forEach(ref => {
+            if (!existingDigests.has(ref.digest)) {
+              allReferrers.push(ref);
+            }
+          });
+        }
+
+        return <ReferredBy referrers={allReferrers} />;
       default:
         return <HistoryLayers name={imageDetailData?.name} history={selectedManifest?.history || []} />;
     }
